@@ -23,12 +23,23 @@ public class Expense {
     public int getId() {
         return id;
     }
+    public String getName(){
+        return name;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public LocalDate getDate(){
+        return  Date;
+    }
 
     public void setAmount(double amount) {
         this.amount = amount;
     }
     @Override
     public String  toString (){
-        return String.valueOf(this.id) +" " + this.Date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + " " + this.description + " " + String.valueOf(this.amount);
+        return String.valueOf(this.id) + " " + this.Date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + " " + this.description + " " + String.valueOf(this.amount);
     }
 }
