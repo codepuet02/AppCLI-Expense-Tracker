@@ -6,26 +6,21 @@ import java.time.format.DateTimeFormatter;
 public class Expense {
     private LocalDate Date;
     private int id;
-    private String name;
     private String description;
     private double amount;
-    private String category;
 
 
-    public Expense(String name,String description, double amount,String category){
-        this.name = name;
+    public Expense(String description, double amount){
         this.description = description;
         this.amount = amount;
         this.Date = LocalDate.now();
-        this.category = category;
+
     }
 
     public int getId() {
         return id;
     }
-    public String getName(){
-        return name;
-    }
+
 
     public double getAmount() {
         return amount;
