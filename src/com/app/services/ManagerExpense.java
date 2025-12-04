@@ -2,6 +2,7 @@ package com.app.services;
 import com.app.models.Expense;
 import java.util.ArrayList;
 import java.util.HashMap;
+import  com.app.models.Response;
 
 import  com.app.models.Result;
 
@@ -15,12 +16,12 @@ public class ManagerExpense {
         return dataBase;
     }
 
-    public Result Add(String description, double value){
+    public Response<Void> Add(String description, double value){
         if(value < 0 ){
-            return Result.INVALID_AMOUNT;
+            return new Response<>(Result.INVALID_AMOUNT,null,"Monto invalido");
         }
         dataBase.add(new Expense(description,value,id++));
-        return Result.SUCCES;
+        return new Response<>(Result.SUCCES,null,"Gasto agregado de manera exitosa");
     }
 
     public Result Update(int Id, double amount){
@@ -33,44 +34,59 @@ public class ManagerExpense {
          return Result.SUCCES;
     }
 
-    public  Result Delete(int Id){
+    public  Response<Void> Delete(int Id){
 
         for(int i = 0;i < dataBase.size();i++){
             if(dataBase.get(i).getId() == Id){
                 dataBase.remove(i);
-                 return Result.SUCCES;
+                 return  new Response<>(Result.SUCCES,null,"gasto eliminado de manera exitosa");
             }
         }
 
-        return  Result.ERROR_NOT_FOUND;
+        return  new Response<>(Result.ERROR_NOT_FOUND,null,"no se encontro id");
 
 
     }
 
 
-    public ArrayList<Expense> seeAll(){
-      return new ArrayList<>(this.dataBase);
+    public Response<ArrayList<Expense>> seeAll(){
+      if(dataBase.isEmpty()){
+         return new Response<>(Result.ERROR_NOT_FOUND,null,"No se encontraron Gastos");
+      }
+
+      return new Response<>(Result.SUCCES, new ArrayList<>(dataBase),null);
+
     }
 
 
-    public double Summary(){
+    public Response<Double> Summary(){
+         if (dataBase.isEmpty()){
+             return new Response<>(Result.ERROR_NOT_FOUND,0.0, "no hay resumen para mostrar");
+         }
+
         double total = 0;
-
         for(Expense E:dataBase ){
             total += E.getAmount();
         }
-        return total;
+        return new Response<>(Result.SUCCES,total,null);
     }
 
 
-    public double SummarySpecificMonth(int month){
+    public Response<Double> SummarySpecificMonth(int month){
+        if(month < 1 || month > 12){
+            return new Response<>(Result.INVALID_DATE,0.0,"el numero del mes es invalido");
+        }
+
         double total = 0;
         for(Expense E : dataBase){
             if(E.getDate().getMonthValue() == month){
                 total+= E.getAmount();
             }
         }
-        return  total;
+        if(total == 0){
+            return new Response<>(Result.INVALID_AMOUNT,total,"no hay gastos resgistrados en ese mes");
+        }
+        return new Response<>(Result.SUCCES,total,null);
     }
 
 

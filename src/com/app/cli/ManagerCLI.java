@@ -2,8 +2,10 @@ package com.app.cli;
 import java.util.ArrayList;
 import java.util.HashMap;
 import com.app.models.Expense;
+import com.app.models.Response;
 import com.app.models.Result;
 import com.app.services.ManagerExpense;
+import com.app.views.PrinterViews;
 
 
 
@@ -11,11 +13,13 @@ public class ManagerCLI {
    final  private ManagerExpense ManagerExpense;
     private String[] flags  = {"--description","--amount","--id","--month"};
     final private FlagExtractor FlagExtractor;
+    final private PrinterViews printer;
 
 
     public ManagerCLI(){
         this.ManagerExpense = new ManagerExpense();
         this.FlagExtractor = new FlagExtractor();
+        this.printer = new PrinterViews();
 
     }
 
@@ -56,6 +60,7 @@ public class ManagerCLI {
                 case "delete":
 
                   comandDelete(string);
+                  break;
                 default:
                     System.out.println("no se reconoce el comando");
 
@@ -67,6 +72,7 @@ public class ManagerCLI {
 
     private void comandAdd(String[] tokens ){
         HashMap<String,String> Tokens =  FlagExtractor.flagExtractor(tokens,flags);
+        System.out.println("Tokens = " + Tokens);
         if (!Tokens.containsKey("--description")){
             System.out.println("error: falta de flag--description");
             return;
@@ -79,20 +85,27 @@ public class ManagerCLI {
             System.out.println("error: falta de valor para la flag --description");
             return;
         }
-        if (Tokens.containsKey("--value") && Tokens.get("--value").equals("MISSING")){
-            System.out.println("error: falta de valor para la flag --description");
+        if (Tokens.containsKey("--amount") && Tokens.get("--amount").equals("MISSING")){
+            System.out.println("error: falta de valor para la flag --value");
             return;
         }
 
 
 
             try{
+
+
+
                 String description = Tokens.get("--description");
                 double value = Double.parseDouble(Tokens.get("--amount"));
-                if(ManagerExpense.Add(description,value) == Result.SUCCES){
-                     // se llama al view correspondiente
-                } else if (ManagerExpense.Add(description,value) == Result.INVALID_AMOUNT) {
-                    //se llama metodo correspondiente
+                Response<Void> R = ManagerExpense.Add(description,value);
+                if(R.getStatus() == Result.SUCCES){
+                    printer.mesaggeExit(R.getTxt());
+                    return;
+                }
+                if (R.getStatus()== Result.INVALID_AMOUNT) {
+                    printer.messageError(R.getTxt());
+
                 }
 
             }catch (NumberFormatException e){
@@ -104,16 +117,34 @@ public class ManagerCLI {
 
     }
 
-    private  void comandList(){
-       ManagerExpense.seeAll();
+    private void comandList(){
+        Response<ArrayList<Expense>> obj = ManagerExpense.seeAll();
+        Result R  = obj.getStatus();
+        if(R == Result.ERROR_NOT_FOUND){
+            printer.messageError(obj.getTxt());
+            return;
+        }
+        if(R == Result.SUCCES){
+            printer.messageList(obj.getData());
+        }
+
     }
 
     private  void comandSummary(String[] tokens){
         HashMap<String,String> Tokens = FlagExtractor.flagExtractor(tokens,flags);
-
         if(Tokens.isEmpty()){
-            ManagerExpense.Summary();
-            return;
+
+            Response<Double> obj = ManagerExpense.Summary();
+            Result R = obj.getStatus();
+            if (R == Result.ERROR_NOT_FOUND){
+                printer.messageError(obj.getTxt());
+                return;
+            }
+            if (R == obj.getStatus()){
+                printer.mesaggeExit(String.valueOf(obj.getData()));
+                return;
+            }
+
         }
 
         if (!Tokens.containsKey("--month")){
@@ -129,7 +160,19 @@ public class ManagerCLI {
 
             try {
                 int valueMonth = Integer.parseInt(Tokens.get("--month"));
-                ManagerExpense.SummarySpecificMonth(valueMonth);
+                Response<Double> obj = ManagerExpense.SummarySpecificMonth(valueMonth);
+                Result R = obj.getStatus();
+
+                if (R == Result.SUCCES){
+                    printer.mesaggeExit(String.valueOf(obj.getData()));
+                    return;
+                }
+
+                if(R == Result.INVALID_DATE){
+                    printer.messageError(obj.getTxt());
+
+                }
+
 
 
             }catch (NumberFormatException e){
@@ -150,7 +193,16 @@ public class ManagerCLI {
         }
         try {
             int id = Integer.parseInt(Tokens.get("--id"));
-            ManagerExpense.Delete(id);
+            Response<Void> obj  = ManagerExpense.Delete(id);
+            Result R = obj.getStatus();
+            if (R == Result.SUCCES){
+                printer.mesaggeExit(obj.getTxt());
+                return;
+            }
+            if (R == Result.ERROR_NOT_FOUND){
+                printer.messageError(obj.getTxt());
+
+            }
         }catch (NumberFormatException e){
             System.out.println("error: debe ingresar un numero");
         }
